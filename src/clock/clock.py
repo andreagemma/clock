@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import time as time_module
+from collections.abc import Hashable
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, tzinfo
-from typing import Any, Callable, Hashable, Literal, Optional, Union
+from typing import Any, Callable, Literal, Union
 
 ClockMode = Literal["realtime", "wrap", "fixed", "scheduled", "manual"]
 DeltaLike = Union[timedelta, int, float]
@@ -53,103 +54,103 @@ class Job:
     ```
     """
 
-    scheduler: "_Scheduler"
+    scheduler: _Scheduler
     interval: int = 1
-    unit: Optional[str] = None
-    at_time: Optional[time] = None
-    start_day: Optional[int] = None
+    unit: str | None = None
+    at_time: time | None = None
+    start_day: int | None = None
     tags: set[Hashable] = field(default_factory=set)
-    job_func: Optional[Callable[..., Any]] = None
+    job_func: Callable[..., Any] | None = None
     args: tuple[Any, ...] = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
+    last_run: datetime | None = None
+    next_run: datetime | None = None
 
     @property
-    def second(self) -> "Job":
+    def second(self) -> Job:
         return self.seconds
 
     @property
-    def seconds(self) -> "Job":
+    def seconds(self) -> Job:
         return self._with_unit("seconds")
 
     @property
-    def minute(self) -> "Job":
+    def minute(self) -> Job:
         return self.minutes
 
     @property
-    def minutes(self) -> "Job":
+    def minutes(self) -> Job:
         return self._with_unit("minutes")
 
     @property
-    def hour(self) -> "Job":
+    def hour(self) -> Job:
         return self.hours
 
     @property
-    def hours(self) -> "Job":
+    def hours(self) -> Job:
         return self._with_unit("hours")
 
     @property
-    def day(self) -> "Job":
+    def day(self) -> Job:
         return self.days
 
     @property
-    def days(self) -> "Job":
+    def days(self) -> Job:
         return self._with_unit("days")
 
     @property
-    def week(self) -> "Job":
+    def week(self) -> Job:
         return self.weeks
 
     @property
-    def weeks(self) -> "Job":
+    def weeks(self) -> Job:
         return self._with_unit("weeks")
 
     @property
-    def month(self) -> "Job":
+    def month(self) -> Job:
         return self.months
 
     @property
-    def months(self) -> "Job":
+    def months(self) -> Job:
         return self._with_unit("months")
 
     @property
-    def year(self) -> "Job":
+    def year(self) -> Job:
         return self.years
 
     @property
-    def years(self) -> "Job":
+    def years(self) -> Job:
         return self._with_unit("years")
 
     @property
-    def monday(self) -> "Job":
+    def monday(self) -> Job:
         return self._with_weekday(0)
 
     @property
-    def tuesday(self) -> "Job":
+    def tuesday(self) -> Job:
         return self._with_weekday(1)
 
     @property
-    def wednesday(self) -> "Job":
+    def wednesday(self) -> Job:
         return self._with_weekday(2)
 
     @property
-    def thursday(self) -> "Job":
+    def thursday(self) -> Job:
         return self._with_weekday(3)
 
     @property
-    def friday(self) -> "Job":
+    def friday(self) -> Job:
         return self._with_weekday(4)
 
     @property
-    def saturday(self) -> "Job":
+    def saturday(self) -> Job:
         return self._with_weekday(5)
 
     @property
-    def sunday(self) -> "Job":
+    def sunday(self) -> Job:
         return self._with_weekday(6)
 
-    def at(self, value: str) -> "Job":
+    def at(self, value: str) -> Job:
         """Run at a specific clock time within the selected interval."""
 
         if self.unit is None:
@@ -157,13 +158,13 @@ class Job:
         self.at_time = _parse_at_time(value, self.unit)
         return self
 
-    def tag(self, *tags: Hashable) -> "Job":
+    def tag(self, *tags: Hashable) -> Job:
         """Attach one or more tags to the job."""
 
         self.tags.update(tags)
         return self
 
-    def do(self, job_func: Callable[..., Any], *args: Any, **kwargs: Any) -> "Job":
+    def do(self, job_func: Callable[..., Any], *args: Any, **kwargs: Any) -> Job:
         """Register the job function and add the job to the scheduler."""
 
         if self.unit is None:
@@ -175,7 +176,7 @@ class Job:
         self.scheduler.add(self)
         return self
 
-    def cancel(self) -> "Job":
+    def cancel(self) -> Job:
         """Remove this job from its scheduler."""
 
         self.scheduler.cancel(self)
@@ -197,11 +198,11 @@ class Job:
 
         return result
 
-    def _with_unit(self, unit: str) -> "Job":
+    def _with_unit(self, unit: str) -> Job:
         self.unit = unit
         return self
 
-    def _with_weekday(self, weekday: int) -> "Job":
+    def _with_weekday(self, weekday: int) -> Job:
         self.unit = "weeks"
         self.start_day = weekday
         return self
@@ -302,10 +303,10 @@ class Clock:
     def __init__(
         self,
         mode: ClockMode = "realtime",
-        start_at: Optional[DatetimeLike] = None,
+        start_at: DatetimeLike | None = None,
         factor: float = 1.0,
         step: DeltaLike = timedelta(seconds=1),
-        tz: Optional[tzinfo] = None,
+        tz: tzinfo | None = None,
         monotonic: TimeSource = time_module.monotonic,
         auto_run_due: bool = True,
     ) -> None:
@@ -322,9 +323,9 @@ class Clock:
     @classmethod
     def realtime(
         cls,
-        start_at: Optional[DatetimeLike] = None,
-        tz: Optional[tzinfo] = None,
-    ) -> "Clock":
+        start_at: DatetimeLike | None = None,
+        tz: tzinfo | None = None,
+    ) -> Clock:
         """Create a clock that advances at wall-clock speed."""
 
         return cls(mode="realtime", start_at=start_at, tz=tz)
@@ -333,9 +334,9 @@ class Clock:
     def wrap(
         cls,
         factor: float = 1.0,
-        start_at: Optional[DatetimeLike] = None,
-        tz: Optional[tzinfo] = None,
-    ) -> "Clock":
+        start_at: DatetimeLike | None = None,
+        tz: tzinfo | None = None,
+    ) -> Clock:
         """Create a clock that advances at ``factor * real_time``."""
 
         return cls(mode="wrap", start_at=start_at, factor=factor, tz=tz)
@@ -344,9 +345,9 @@ class Clock:
     def fixed(
         cls,
         step: DeltaLike = timedelta(seconds=1),
-        start_at: Optional[DatetimeLike] = None,
-        tz: Optional[tzinfo] = None,
-    ) -> "Clock":
+        start_at: DatetimeLike | None = None,
+        tz: tzinfo | None = None,
+    ) -> Clock:
         """Create a clock that advances by a fixed delta on every step."""
 
         return cls(mode="fixed", start_at=start_at, step=step, tz=tz)
@@ -354,9 +355,9 @@ class Clock:
     @classmethod
     def scheduled(
         cls,
-        start_at: Optional[DatetimeLike] = None,
-        tz: Optional[tzinfo] = None,
-    ) -> "Clock":
+        start_at: DatetimeLike | None = None,
+        tz: tzinfo | None = None,
+    ) -> Clock:
         """Create a clock that jumps to the next scheduled job on step."""
 
         return cls(mode="scheduled", start_at=start_at, tz=tz)
@@ -364,9 +365,9 @@ class Clock:
     @classmethod
     def manual(
         cls,
-        start_at: Optional[DatetimeLike] = None,
-        tz: Optional[tzinfo] = None,
-    ) -> "Clock":
+        start_at: DatetimeLike | None = None,
+        tz: tzinfo | None = None,
+    ) -> Clock:
         """Create a clock that advances only by explicit step amounts."""
 
         return cls(mode="manual", start_at=start_at, tz=tz)
@@ -431,15 +432,15 @@ class Clock:
 
     def step(
         self,
-        amount: Optional[DeltaLike] = None,
+        amount: DeltaLike | None = None,
         *,
         seconds: float = 0,
         minutes: float = 0,
         hours: float = 0,
         days: float = 0,
         weeks: float = 0,
-        run_due: Optional[bool] = None,
-    ) -> "Clock":
+        run_due: bool | None = None,
+    ) -> Clock:
         """Advance the clock according to its mode and return ``self``.
 
         Fixed clocks ignore wall-clock time and use the configured fixed step.
@@ -500,23 +501,23 @@ class Clock:
 
         return self._scheduler.run_all()
 
-    def next_run(self) -> Optional[datetime]:
+    def next_run(self) -> datetime | None:
         """Return the next scheduled internal datetime, if any."""
 
         return self._scheduler.next_run()
 
-    def jobs(self, tag: Optional[Hashable] = None) -> list[Job]:
+    def jobs(self, tag: Hashable | None = None) -> list[Job]:
         """Return scheduled jobs, optionally filtered by tag."""
 
         return self._scheduler.jobs(tag)
 
-    def cancel(self, job: Job) -> "Clock":
+    def cancel(self, job: Job) -> Clock:
         """Cancel a scheduled job and return ``self``."""
 
         self._scheduler.cancel(job)
         return self
 
-    def clear(self, *tags: Hashable) -> "Clock":
+    def clear(self, *tags: Hashable) -> Clock:
         """Clear all jobs, or only jobs matching one of the provided tags."""
 
         self._scheduler.clear(*tags)
@@ -548,18 +549,18 @@ class _Scheduler:
         tag_set = set(tags)
         self._jobs = [job for job in self._jobs if job.tags.isdisjoint(tag_set)]
 
-    def jobs(self, tag: Optional[Hashable] = None) -> list[Job]:
+    def jobs(self, tag: Hashable | None = None) -> list[Job]:
         if tag is None:
             return list(self._jobs)
         return [job for job in self._jobs if tag in job.tags]
 
-    def next_run(self) -> Optional[datetime]:
+    def next_run(self) -> datetime | None:
         scheduled = [job.next_run for job in self._jobs if job.next_run is not None]
         if not scheduled:
             return None
         return min(scheduled)
 
-    def run_pending(self) -> List[Any]:
+    def run_pending(self) -> list[Any]:
         now = self.now()
         due_jobs = [
             job
@@ -574,7 +575,7 @@ class _Scheduler:
         self._sort()
         return results
 
-    def run_all(self) -> List[Any]:
+    def run_all(self) -> list[Any]:
         results = []
         for job in list(self._jobs):
             if job in self._jobs:
@@ -600,7 +601,7 @@ def _validate_factor(factor: float) -> float:
     return factor
 
 
-def _coerce_datetime(value: Optional[DatetimeLike], tz: Optional[tzinfo]) -> datetime:
+def _coerce_datetime(value: DatetimeLike | None, tz: tzinfo | None) -> datetime:
     if value is None:
         return datetime.now(tz)
     if isinstance(value, str):
@@ -611,7 +612,7 @@ def _coerce_datetime(value: Optional[DatetimeLike], tz: Optional[tzinfo]) -> dat
 
 
 def _coerce_delta(
-    value: Optional[DeltaLike] = None,
+    value: DeltaLike | None = None,
     *,
     seconds: float = 0,
     minutes: float = 0,
