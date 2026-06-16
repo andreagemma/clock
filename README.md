@@ -182,7 +182,21 @@ pytest
 python -m build
 ```
 
+## Releases
+
+Releases are created by the `Release` GitHub Actions workflow.
+
+Create a release from a tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Or run the workflow manually from GitHub Actions. If no version is provided,
+the workflow uses the version declared in `pyproject.toml` and checks that it
+matches `clock.__version__`.
+
 ## Python Support
 
 Clock supports Python 3.9 and newer.
-

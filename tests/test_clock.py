@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from clock import CancelJob, Clock, ClockError
+from clock import CancelJob, Clock, ClockError, __version__
 
 
 class FakeMonotonic:
@@ -16,6 +16,9 @@ class FakeMonotonic:
 
 
 class ClockTest(unittest.TestCase):
+    def test_package_exposes_version(self) -> None:
+        self.assertEqual(__version__, "0.1.0")
+
     def test_manual_clock_advances_by_explicit_amounts(self) -> None:
         clock = Clock.manual(start_at=datetime(2026, 1, 1, 9, 0, 0))
 
