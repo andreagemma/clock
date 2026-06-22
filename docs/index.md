@@ -18,6 +18,9 @@ For development:
 python -m pip install -e ".[dev]"
 ```
 
+GA Clock supports Python 3.10 and newer. The distribution name is `ga-clock` and the
+import package is `ga_clock`.
+
 ## Main Concepts
 
 GA Clock separates wall-clock time from internal time.
@@ -67,7 +70,8 @@ clock = Clock.manual(start_at="2026-01-01T09:00:00")
 
 ## Scheduler
 
-The scheduler syntax is fluent and inspired by the `schedule` package.
+The scheduler syntax is fluent and inspired by the `schedule` package. Configuration
+operations return new job objects rather than mutating earlier builder values.
 
 ```python
 clock.every().second.do(job)

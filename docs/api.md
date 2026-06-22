@@ -63,7 +63,8 @@ Mode behavior:
 
 ## `Job`
 
-Jobs are created with `Clock.every()`.
+Jobs are created with `Clock.every()`. Configuration is immutable: unit properties,
+`at()`, `tag()`, and `do()` return a new `Job` without changing the preceding value.
 
 ```python
 clock.every(10).seconds.do(job)
@@ -106,3 +107,11 @@ def run_once():
 
 clock.every().second.do(run_once)
 ```
+
+## Exceptions and Warnings
+
+- `GAClockError`: base package exception.
+- `ClockError`: invalid modes, durations, schedules, or mode-specific operations.
+- `GAClockWarning`: base package warning.
+
+Callback exceptions are propagated to the caller and are never silently suppressed.

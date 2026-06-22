@@ -1,16 +1,19 @@
-"""Core GA Clock and scheduler implementation."""
+"""Internal implementation for the public GA Clock API."""
 
 from __future__ import annotations
 
 import time as time_module
-from collections.abc import Hashable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Hashable, Mapping
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta, tzinfo
-from typing import Any, Callable, Literal, Union
+from types import MappingProxyType
+from typing import Any, Final, Literal, TypeAlias, cast
+
+from .exceptions import ClockError
 
 ClockMode = Literal["realtime", "wrap", "fixed", "scheduled", "manual"]
-DeltaLike = Union[timedelta, int, float]
-DatetimeLike = Union[datetime, str]
+DeltaLike: TypeAlias = timedelta | int | float
+DatetimeLike: TypeAlias = datetime | str
 TimeSource = Callable[[], float]
 
 SECONDS_PER_DAY = 86_400
@@ -19,15 +22,11 @@ SECONDS_PER_GREGORIAN_YEAR = SECONDS_PER_DAY * DAYS_PER_GREGORIAN_YEAR
 SECONDS_PER_GREGORIAN_MONTH = SECONDS_PER_GREGORIAN_YEAR / 12
 
 
-class ClockError(ValueError):
-    """Raised when a clock operation is incompatible with the selected mode."""
-
-
 class _CancelJob:
     """Sentinel returned by a job to remove itself from the scheduler."""
 
 
-CancelJob = _CancelJob()
+CancelJob: Final = _CancelJob()
 
 
 @dataclass(frozen=True)
@@ -43,7 +42,7 @@ class Elapsed:
     years: float
 
 
-@dataclass
+@dataclass(eq=False, frozen=True)
 class Job:
     """A scheduled job created by :meth:`Clock.every`.
 
@@ -59,12 +58,13 @@ class Job:
     unit: str | None = None
     at_time: time | None = None
     start_day: int | None = None
-    tags: set[Hashable] = field(default_factory=set)
+    tags: frozenset[Hashable] = field(default_factory=frozenset)
     job_func: Callable[..., Any] | None = None
     args: tuple[Any, ...] = field(default_factory=tuple)
-    kwargs: dict[str, Any] = field(default_factory=dict)
+    kwargs: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
     last_run: datetime | None = None
     next_run: datetime | None = None
+    _identity: object = field(default_factory=object, repr=False)
 
     @property
     def second(self) -> Job:
@@ -153,28 +153,35 @@ class Job:
     def at(self, value: str) -> Job:
         """Run at a specific clock time within the selected interval."""
 
+        self._ensure_not_scheduled()
         if self.unit is None:
             raise ClockError("Choose a time unit before calling at().")
-        self.at_time = _parse_at_time(value, self.unit)
-        return self
+        configured = replace(self, at_time=_parse_at_time(value, self.unit))
+        self.scheduler.replace(self, configured)
+        return configured
 
     def tag(self, *tags: Hashable) -> Job:
         """Attach one or more tags to the job."""
 
-        self.tags.update(tags)
-        return self
+        configured = replace(self, tags=self.tags.union(tags))
+        self.scheduler.replace(self, configured)
+        return configured
 
     def do(self, job_func: Callable[..., Any], *args: Any, **kwargs: Any) -> Job:
         """Register the job function and add the job to the scheduler."""
 
+        self._ensure_not_scheduled()
         if self.unit is None:
             raise ClockError("Choose a time unit before calling do().")
-        self.job_func = job_func
-        self.args = args
-        self.kwargs = kwargs
-        self.next_run = self._next_after(self.scheduler.now())
-        self.scheduler.add(self)
-        return self
+        configured = replace(
+            self,
+            job_func=job_func,
+            args=args,
+            kwargs=MappingProxyType(dict(kwargs)),
+        )
+        object.__setattr__(configured, "next_run", configured._next_after(self.scheduler.now()))
+        self.scheduler.add(configured)
+        return configured
 
     def cancel(self) -> Job:
         """Remove this job from its scheduler."""
@@ -189,23 +196,31 @@ class Job:
             raise ClockError("Cannot run a job before do() has been called.")
 
         result = self.job_func(*self.args, **self.kwargs)
-        self.last_run = self.scheduler.now()
+        last_run = self.scheduler.now()
+        object.__setattr__(self, "last_run", last_run)
 
         if result is CancelJob:
             self.scheduler.cancel(self)
         else:
-            self.next_run = self._next_after(self.last_run)
+            object.__setattr__(self, "next_run", self._next_after(last_run))
 
         return result
 
     def _with_unit(self, unit: str) -> Job:
-        self.unit = unit
-        return self
+        self._ensure_not_scheduled()
+        configured = replace(self, unit=unit)
+        self.scheduler.replace(self, configured)
+        return configured
 
     def _with_weekday(self, weekday: int) -> Job:
-        self.unit = "weeks"
-        self.start_day = weekday
-        return self
+        self._ensure_not_scheduled()
+        configured = replace(self, unit="weeks", start_day=weekday)
+        self.scheduler.replace(self, configured)
+        return configured
+
+    def _ensure_not_scheduled(self) -> None:
+        if self.job_func is not None:
+            raise ClockError("A scheduled job cannot be reconfigured; create a new job instead.")
 
     def _next_after(self, reference: datetime) -> datetime:
         if self.unit is None:
@@ -533,13 +548,28 @@ class _Scheduler:
         return self.clock.now()
 
     def add(self, job: Job) -> None:
-        if job not in self._jobs:
+        for index, existing in enumerate(self._jobs):
+            if existing._identity is job._identity:
+                self._jobs[index] = job
+                break
+        else:
             self._jobs.append(job)
         self._sort()
 
     def cancel(self, job: Job) -> None:
-        if job in self._jobs:
-            self._jobs.remove(job)
+        self._jobs = [
+            existing for existing in self._jobs if existing._identity is not job._identity
+        ]
+
+    def replace(self, old: Job, new: Job) -> None:
+        for index, existing in enumerate(self._jobs):
+            if existing._identity is old._identity:
+                self._jobs[index] = new
+                self._sort()
+                return
+
+    def contains(self, job: Job) -> bool:
+        return any(existing._identity is job._identity for existing in self._jobs)
 
     def clear(self, *tags: Hashable) -> None:
         if not tags:
@@ -570,7 +600,7 @@ class _Scheduler:
 
         results = []
         for job in due_jobs:
-            if job in self._jobs:
+            if self.contains(job):
                 results.append(job.run())
         self._sort()
         return results
@@ -578,7 +608,7 @@ class _Scheduler:
     def run_all(self) -> list[Any]:
         results = []
         for job in list(self._jobs):
-            if job in self._jobs:
+            if self.contains(job):
                 results.append(job.run())
         self._sort()
         return results
@@ -592,7 +622,7 @@ def _validate_mode(mode: str) -> ClockMode:
         raise ClockError(
             "mode must be one of: 'realtime', 'wrap', 'fixed', 'scheduled', 'manual'."
         )
-    return mode  # type: ignore[return-value]
+    return cast(ClockMode, mode)
 
 
 def _validate_factor(factor: float) -> float:
@@ -686,8 +716,5 @@ def _add_months(value: datetime, months: int) -> datetime:
 
 
 def _days_in_month(year: int, month: int) -> int:
-    if month == 12:
-        next_month = date(year + 1, 1, 1)
-    else:
-        next_month = date(year, month + 1, 1)
+    next_month = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
     return (next_month - date(year, month, 1)).days

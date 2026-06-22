@@ -20,4 +20,10 @@ dist/
 .idea/
 .vscode/
 .DS_Store
+AGENT.md
 
+*.egg-info/
+.tox/
+.tooling/
+.agents/
+.vscode/
