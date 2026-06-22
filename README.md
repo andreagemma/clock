@@ -1,6 +1,6 @@
 # GA Clock
 
-[![CI](https://github.com/andreagemma/ga-clock/actions/workflows/ci.yml/badge.svg)](https://github.com/andreagemma/ga-clock/actions/workflows/ci.yml)
+[![CI](https://github.com/andreagemma/clock/actions/workflows/ci.yml/badge.svg)](https://github.com/andreagemma/clock/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/ga-clock.svg)](https://pypi.org/project/ga-clock/)
 [![Python](https://img.shields.io/pypi/pyversions/ga-clock.svg)](https://pypi.org/project/ga-clock/)
 
