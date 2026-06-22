@@ -42,9 +42,9 @@ dev = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/andreagemma/ga-clock#readme"
-Issues = "https://github.com/andreagemma/ga-clock/issues"
-Source = "https://github.com/andreagemma/ga-clock"
+Documentation = "https://github.com/andreagemma/clock#readme"
+Issues = "https://github.com/andreagemma/clock/issues"
+Source = "https://github.com/andreagemma/clock"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
