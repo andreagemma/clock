@@ -1,0 +1,81 @@
+name: Build Wheel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wheel-latest
+  cancel-in-progress: true
+
+jobs:
+  build-wheel:
+    name: Build installable wheel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Smoke test wheel installation
+        run: |
+          python -m venv wheel-test
+          wheel-test/bin/python -m pip install dist/*.whl
+          wheel-test/bin/python -c "import clock; print(clock.__version__)"
+
+      - name: Publish rolling wheel
+        id: publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: wheel-latest
+        run: |
+          WHEEL_PATH="$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
+
+          if [ -z "$WHEEL_PATH" ]; then
+            echo "No wheel was produced." >&2
+            exit 1
+          fi
+
+          WHEEL_NAME="$(basename "$WHEEL_PATH")"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$WHEEL_PATH" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$WHEEL_PATH" \
+              --target "$GITHUB_SHA" \
+              --title "Latest wheel build" \
+              --notes "Rolling installable wheel built from the main branch." \
+              --prerelease
+          fi
+
+          INSTALL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${WHEEL_NAME}"
+          echo "install_url=$INSTALL_URL" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Install this wheel"
+            echo
+            echo '```bash'
+            echo "pip install $INSTALL_URL"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show install URL
+        run: echo "pip install ${{ steps.publish.outputs.install_url }}"

@@ -26,6 +26,15 @@ From PyPI, once published:
 pip install clock
 ```
 
+Install the latest wheel built from `main` directly from GitHub:
+
+```bash
+pip install https://github.com/andreagemma/clock/releases/download/wheel-latest/clock-0.1.0-py3-none-any.whl
+```
+
+Wheel filenames must include the distribution version and compatibility tags;
+`clock.whl` alone is not a valid wheel filename accepted by `pip`.
+
 For local development from this repository:
 
 ```bash
@@ -185,6 +194,9 @@ python -m build
 ## Releases
 
 Releases are created by the `Release` GitHub Actions workflow.
+
+The `Build Wheel` workflow also maintains the rolling `wheel-latest`
+prerelease and prints its direct `pip install` URL in the workflow summary.
 
 Create a release from a tag:
 
