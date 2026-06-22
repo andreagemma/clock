@@ -39,7 +39,7 @@ jobs:
         run: |
           python -m venv wheel-test
           wheel-test/bin/python -m pip install dist/*.whl
-          wheel-test/bin/python -c "import clock; print(clock.__version__)"
+          wheel-test/bin/python -c "import ga_clock; print(ga_clock.__version__)"
 
       - name: Publish rolling wheel
         id: publish

@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from clock import CancelJob, Clock, ClockError, __version__
+from ga_clock import CancelJob, Clock, ClockError, __version__
 
 
 class FakeMonotonic:

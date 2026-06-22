@@ -99,11 +99,10 @@ clock.clear("sync")
 ### Cancelling from a Job
 
 ```python
-from clock import CancelJob
+from ga_clock import CancelJob
 
 def run_once():
     return CancelJob
 
 clock.every().second.do(run_once)
 ```
-

@@ -3,16 +3,16 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "clock"
+name = "ga-clock"
 version = "0.1.0"
-description = "A controllable Python clock with realtime, accelerated, fixed, scheduled, and manual time modes."
+description = "GA Clock is a controllable Python clock with realtime, accelerated, fixed, scheduled, and manual time modes."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [
-  { name = "Clock contributors" }
+  { name = "GA Clock contributors" }
 ]
-keywords = ["clock", "scheduler", "time", "testing", "simulation"]
+keywords = ["ga-clock", "clock", "scheduler", "time", "testing", "simulation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -37,7 +37,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/clock"]
+packages = ["src/ga_clock"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

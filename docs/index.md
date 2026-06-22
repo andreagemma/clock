@@ -1,15 +1,15 @@
-# Clock Documentation
+# GA Clock Documentation
 
-Clock is a dependency-free Python package that provides a controllable
+GA Clock is a dependency-free Python package that provides a controllable
 datetime source and an internal-time scheduler.
 
-Use Clock when production code should run against realtime, but tests and
+Use GA Clock when production code should run against realtime, but tests and
 simulations need deterministic time.
 
 ## Installation
 
 ```bash
-pip install clock
+pip install ga-clock
 ```
 
 For development:
@@ -20,7 +20,7 @@ python -m pip install -e ".[dev]"
 
 ## Main Concepts
 
-Clock separates wall-clock time from internal time.
+GA Clock separates wall-clock time from internal time.
 
 - In `realtime` mode, internal time follows real time.
 - In `wrap` mode, internal time follows real time multiplied by a factor.
@@ -33,7 +33,7 @@ All scheduler operations use internal time.
 ## API Overview
 
 ```python
-from clock import Clock
+from ga_clock import Clock
 
 clock = Clock.manual()
 
@@ -114,7 +114,7 @@ Scheduled mode skips idle time.
 ```python
 from datetime import datetime
 
-from clock import Clock
+from ga_clock import Clock
 
 events = []
 
@@ -132,7 +132,6 @@ assert events == [
 
 ## Elapsed Months and Years
 
-Elapsed months and years are duration approximations. Clock uses the average
+Elapsed months and years are duration approximations. GA Clock uses the average
 Gregorian year length, 365.2425 days, and defines one month as one twelfth of
 that year.
-

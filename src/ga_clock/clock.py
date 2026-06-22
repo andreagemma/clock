@@ -1,4 +1,4 @@
-"""Core clock and scheduler implementation."""
+"""Core GA Clock and scheduler implementation."""
 
 from __future__ import annotations
 

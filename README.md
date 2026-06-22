@@ -1,6 +1,6 @@
-# Clock
+# GA Clock
 
-Clock is a small Python library for building applications and tests around a
+GA Clock is a small Python library for building applications and tests around a
 controllable clock. It can behave like real time, accelerated real time, fixed
 ticks, scheduled jumps, or fully manual simulated time.
 
@@ -23,17 +23,17 @@ systems where "now" should be a dependency you can control.
 From PyPI, once published:
 
 ```bash
-pip install clock
+pip install ga-clock
 ```
 
 Install the latest wheel built from `main` directly from GitHub:
 
 ```bash
-pip install https://github.com/andreagemma/clock/releases/download/wheel-latest/clock-0.1.0-py3-none-any.whl
+pip install https://github.com/andreagemma/ga-clock/releases/download/wheel-latest/ga_clock-0.1.0-py3-none-any.whl
 ```
 
 Wheel filenames must include the distribution version and compatibility tags;
-`clock.whl` alone is not a valid wheel filename accepted by `pip`.
+`ga_clock.whl` alone is not a valid wheel filename accepted by `pip`.
 
 For local development from this repository:
 
@@ -47,7 +47,7 @@ python -m pip install -e ".[dev]"
 ```python
 from datetime import datetime, timedelta
 
-from clock import Clock
+from ga_clock import Clock
 
 clock = Clock.manual(start_at=datetime(2026, 1, 1, 9, 0, 0))
 
@@ -58,7 +58,7 @@ print(clock.elapsed())
 print(clock.elapsed_hours())
 ```
 
-## Clock Modes
+## GA Clock Modes
 
 ### Realtime
 
@@ -156,7 +156,7 @@ clock.clear("sync")
 Returning `CancelJob` from a job removes it after it runs:
 
 ```python
-from clock import CancelJob
+from ga_clock import CancelJob
 
 def run_once():
     print("done")
@@ -207,8 +207,25 @@ git push origin v0.1.0
 
 Or run the workflow manually from GitHub Actions. If no version is provided,
 the workflow uses the version declared in `pyproject.toml` and checks that it
-matches `clock.__version__`.
+matches `ga_clock.__version__`.
+
+### Publishing to PyPI
+
+The `Publish to PyPI` workflow runs automatically after a successful `Release`
+workflow, and it can also be started manually. It uses PyPI Trusted Publishing,
+so no API token or password is stored in GitHub.
+
+Configure a Trusted Publisher for the project on PyPI with these values:
+
+- PyPI project name: `ga-clock`
+- GitHub owner: `andreagemma`
+- GitHub repository: `ga-clock`
+- Workflow filename: `pypi.yml`
+- GitHub environment: `pypi`
+
+Before publishing, update both `project.version` in `pyproject.toml` and
+`ga_clock.__version__` in `src/ga_clock/_version.py` to the same new version.
 
 ## Python Support
 
-Clock supports Python 3.9 and newer.
+GA Clock supports Python 3.9 and newer.
